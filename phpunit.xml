@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
+    bootstrap="tests/bootstrap.php"
+    colors="true"
+    failOnRisky="true"
+    failOnWarning="true">
+    <testsuites>
+        <testsuite name="patch-assistant-smoke">
+            <directory suffix="Test.php">tests/smoke</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">includes</directory>
+            <file>dev-tools.php</file>
+            <file>file-tools.php</file>
+        </include>
+    </source>
+</phpunit>

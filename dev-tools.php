@@ -19,11 +19,64 @@ class AI_Assistant_Dev_Tools {
         add_filter('ai_assistant_client_tool_definitions', [self::class, 'register_client_tool_definitions']);
         add_filter('ai_assistant_file_endpoint_tools', [self::class, 'register_file_endpoint_tools']);
         add_filter('ai_assistant_execute_tool', [self::class, 'execute_tool'], 10, 6);
+        add_filter('ai_assistant_execute_file_tool', [self::class, 'execute_file_tool'], 10, 5);
+        add_filter('ai_assistant_read_only_tool_definitions', [self::class, 'register_read_only_tool_definitions']);
+        add_filter('ai_assistant_read_only_tool_names', [self::class, 'register_read_only_tool_names'], 10, 3);
+        add_filter('ai_assistant_default_enabled_tools', [self::class, 'register_default_enabled_tools']);
         add_filter('ai_assistant_system_prompt', [self::class, 'register_system_prompt'], 10, 4);
     }
 
+    public static function register_read_only_tool_names(array $tools): array {
+        return array_values(array_unique(array_merge([
+            'read_file', 'find', 'list_directory', 'search_files', 'search_content',
+        ], $tools)));
+    }
+
+    public static function register_default_enabled_tools(array $tools): array {
+        return array_values(array_unique(array_merge([
+            'read_file', 'list_directory', 'search_files', 'search_content',
+        ], $tools)));
+    }
+
+    public static function register_read_only_tool_definitions(array $tools): array {
+        return array_merge([
+            [
+                'name' => 'read_file',
+                'description' => 'Read one file in wp-content.',
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'path' => ['type' => 'string'],
+                        'offset' => ['type' => 'number'],
+                        'max_length' => ['type' => 'number'],
+                        'search' => ['type' => 'string'],
+                        'before_lines' => ['type' => 'number'],
+                        'after_lines' => ['type' => 'number'],
+                        'occurrence' => ['type' => 'number'],
+                    ],
+                    'required' => ['path'],
+                ],
+            ],
+            [
+                'name' => 'list_directory',
+                'description' => 'List files and directories in wp-content.',
+                'parameters' => ['type' => 'object', 'properties' => ['path' => ['type' => 'string']], 'required' => ['path']],
+            ],
+            [
+                'name' => 'search_files',
+                'description' => 'Search for files in wp-content.',
+                'parameters' => ['type' => 'object', 'properties' => ['pattern' => ['type' => 'string'], 'directory' => ['type' => 'string']], 'required' => ['pattern']],
+            ],
+            [
+                'name' => 'search_content',
+                'description' => 'Search file contents in wp-content.',
+                'parameters' => ['type' => 'object', 'properties' => ['needle' => ['type' => 'string'], 'directory' => ['type' => 'string']], 'required' => ['needle']],
+            ],
+        ], $tools);
+    }
+
     public static function register_tool_definitions(array $tools): array {
-        return array_merge($tools, [
+        return array_merge(self::register_read_only_tool_definitions([]), $tools, [
             self::tool_write_file(),
             self::tool_edit_file(),
             self::tool_delete_file(),
@@ -34,6 +87,10 @@ class AI_Assistant_Dev_Tools {
 
     public static function register_tool_meta(array $tools): array {
         return array_merge($tools, [
+            'read_file'      => ['label' => 'Read File',      'group' => 'File Reading', 'dangerous' => false],
+            'list_directory' => ['label' => 'List Directory', 'group' => 'File Reading', 'dangerous' => false],
+            'search_files'   => ['label' => 'Search Files',   'group' => 'File Reading', 'dangerous' => false],
+            'search_content' => ['label' => 'Search Content', 'group' => 'File Reading', 'dangerous' => false],
             'write_file'     => ['label' => 'Write File',      'group' => 'File Writing',   'dangerous' => true],
             'edit_file'      => ['label' => 'Edit File',       'group' => 'File Writing',   'dangerous' => true],
             'delete_file'    => ['label' => 'Delete File',     'group' => 'File Writing',   'dangerous' => true],
@@ -237,6 +294,17 @@ PROMPT;
         }
 
         return null;
+    }
+
+    public static function execute_file_tool($result, string $tool_name, array $arguments, ?int $conversation_id, \AI_Assistant\Executor $executor) {
+        if ($result !== null) {
+            return $result;
+        }
+
+        return (new \AI_Assistant\File_Tool_Executor(
+            WP_CONTENT_DIR,
+            new \AI_Assistant\Git_Tracker_Manager()
+        ))->execute($tool_name, $arguments, $conversation_id);
     }
 
     private static function tool_write_file(): array {
