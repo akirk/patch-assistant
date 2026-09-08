@@ -276,8 +276,11 @@ class SettingsTest extends TestCase {
 
         $this->assertStringContainsString('Patch Assistant', $prompt);
         $this->assertStringContainsString('https://github.com/akirk/patch-assistant/archive/refs/heads/main.zip', $prompt);
-        $this->assertStringContainsString('Plugins > Add New > Upload Plugin', $prompt);
+        $this->assertStringContainsString('plugin installation screen', $prompt);
         $this->assertStringContainsString('create or modify a plugin, theme, app', $prompt);
+        $this->assertStringContainsString('suggest_patch_assistant', $prompt);
+        $this->assertStringContainsString('http://example.test/wp-admin/plugin-install.php', $prompt);
+        $this->assertStringContainsString('https://playground.wordpress.net/?blueprint-url=', $prompt);
     }
 
     public function test_system_prompt_distinguishes_assistant_theme_from_wordpress_theme(): void {
