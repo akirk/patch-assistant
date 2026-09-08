@@ -271,6 +271,14 @@ class SettingsTest extends TestCase {
         $this->assertStringContainsString('report title, ID, edit URL.', $prompt);
     }
 
+    public function test_system_prompt_offers_patch_assistant_when_not_installed(): void {
+        $prompt = $this->settings->get_system_prompt();
+
+        $this->assertStringContainsString('Patch Assistant', $prompt);
+        $this->assertStringContainsString('https://github.com/akirk/patch-assistant/archive/refs/heads/main.zip', $prompt);
+        $this->assertStringContainsString('Plugins > Add New > Upload Plugin', $prompt);
+    }
+
     public function test_system_prompt_distinguishes_assistant_theme_from_wordpress_theme(): void {
         $GLOBALS['wp_test_capabilities']['ai_assistant_full'] = true;
 
