@@ -19,7 +19,12 @@ foreach ([
     '/includes/class-file-access-health.php',
     '/includes/class-changes-admin.php',
 ] as $patch_file) {
-    require_once dirname(__DIR__) . $patch_file;
+    $class_slug = basename($patch_file, '.php');
+    $class_slug = preg_replace('/^class-/', '', $class_slug);
+    $class_name = 'AI_Assistant\\' . str_replace('-', '_', ucwords($class_slug, '-'));
+    if (!class_exists($class_name)) {
+        require_once dirname(__DIR__) . $patch_file;
+    }
 }
 
 require_once dirname(__DIR__) . '/dev-tools.php';
