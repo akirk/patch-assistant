@@ -4,10 +4,6 @@ $ai_assistant_dir = dirname(__DIR__) . '/ai-assistant';
 if (!is_dir($ai_assistant_dir)) {
     $ai_assistant_dir = dirname(__DIR__) . '/../ai-assistant';
 }
-$patch_assistant_autoload = dirname(__DIR__) . '/vendor/autoload.php';
-if (is_file($patch_assistant_autoload)) {
-    require_once $patch_assistant_autoload;
-}
 require_once $ai_assistant_dir . '/tests/bootstrap.php';
 
 foreach ([
@@ -27,6 +23,13 @@ foreach ([
 }
 
 require_once dirname(__DIR__) . '/dev-tools.php';
+
+// Load Patch Assistant's third-party dependencies after its manually loaded
+// classes, avoiding duplicate declarations from Composer class discovery.
+$patch_assistant_autoload = dirname(__DIR__) . '/vendor/autoload.php';
+if (is_file($patch_assistant_autoload)) {
+    require_once $patch_assistant_autoload;
+}
 
 AI_Assistant_Dev_Tools::init();
 
