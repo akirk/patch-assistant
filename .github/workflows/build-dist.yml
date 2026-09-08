@@ -80,26 +80,28 @@ jobs:
         run: |
           php -r '
           $dist_ref = getenv("DIST_REF");
-          $path = "blueprint.json";
-          $data = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
-          foreach ($data["steps"] as &$step) {
-              if (
-                  ($step["step"] ?? null) === "installPlugin" &&
-                  ($step["pluginData"]["url"] ?? null) === "https://github.com/akirk/patch-assistant" &&
-                  ($step["pluginData"]["resource"] ?? null) === "git:directory"
-              ) {
-                  $step["pluginData"]["ref"] = $dist_ref;
+          foreach (["blueprint.json", "blueprint-install.json"] as $path) {
+              if (!is_file($path)) continue;
+              $data = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+              foreach ($data["steps"] as &$step) {
+                  if (
+                      ($step["step"] ?? null) === "installPlugin" &&
+                      ($step["pluginData"]["url"] ?? null) === "https://github.com/akirk/patch-assistant" &&
+                      ($step["pluginData"]["resource"] ?? null) === "git:directory"
+                  ) {
+                      $step["pluginData"]["ref"] = $dist_ref;
+                  }
               }
+              unset($step);
+              file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
           }
-          unset($step);
-          file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
           '
 
       - name: Push to dist branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "${PLUGIN_FILE}" blueprint.json
+          git add "${PLUGIN_FILE}" blueprint.json blueprint-install.json
           if [ -d vendor ]; then
             git add -f vendor/
           fi
