@@ -42,7 +42,6 @@ add_filter('ai_assistant_read_only_tool_names', static function (array $tools): 
 });
 add_filter('ai_assistant_execute_file_tool', static function ($result, string $tool_name, array $arguments, ?int $conversation_id = null): array {
     return (new \AI_Assistant\File_Tool_Executor(
-        WP_CONTENT_DIR,
-        new \AI_Assistant\Git_Tracker_Manager()
+        WP_CONTENT_DIR
     ))->execute($tool_name, $arguments, $conversation_id);
 }, 10, 4);

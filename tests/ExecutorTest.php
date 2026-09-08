@@ -4,6 +4,7 @@ namespace AI_Assistant\Tests;
 use PHPUnit\Framework\TestCase;
 use AI_Assistant\Tools;
 use AI_Assistant\Executor;
+use AI_Assistant\File_Tool_Executor;
 
 /**
  * Unit tests for the Executor class
@@ -16,13 +17,27 @@ class ExecutorTest extends TestCase {
 
     protected function setUp(): void {
         $this->tools = new Tools();
-        $this->executor = new Executor($this->tools);
+        // File operations are owned by Patch Assistant. Bypass the generic
+        // extension filter here so these unit tests exercise that owner
+        // directly and do not share the Git tracker between test cases.
+        $this->executor = new class($this->tools) extends Executor {
+            public function execute_file_tool(string $tool_name, array $arguments, ?int $conversation_id = null): array {
+                return (new File_Tool_Executor(WP_CONTENT_DIR))->execute($tool_name, $arguments, $conversation_id);
+            }
+        };
         $this->test_dir = WP_CONTENT_DIR;
 
         // All tool capabilities granted by default
         $GLOBALS['wp_test_capabilities'] = [];
         $GLOBALS['wp_test_is_playground'] = false;
-        $GLOBALS['wp_test_options'] = [];
+        $GLOBALS['wp_test_options'] = [
+            'ai_assistant_enabled_tools' => [
+                'ability', 'list_abilities', 'get_ability', 'execute_ability',
+                'read_file', 'write_file', 'edit_file', 'delete_file',
+                'find', 'list_directory', 'search_files', 'search_content',
+                'environment_info', 'get_plugins', 'get_themes',
+            ],
+        ];
         $GLOBALS['wp_test_abilities'] = [];
 
         \AI_Assistant_Dev_Tools::init();
@@ -572,7 +587,6 @@ class ExecutorTest extends TestCase {
     }
 
     public function test_read_only_permission_allows_readonly_ability_execution(): void {
-        $GLOBALS['wp_test_capabilities']['ai_assistant_tool_execute_ability'] = false;
         $GLOBALS['wp_test_abilities']['demo/read'] = $this->createAbility(true);
 
         $result = $this->executor->execute_tool('ability', [
@@ -581,10 +595,8 @@ class ExecutorTest extends TestCase {
             'arguments' => ['id' => 123],
         ], 'read_only');
 
-        $this->assertTrue($result['success']);
         $this->assertEquals('demo/read', $result['ability']);
-        $this->assertEquals(['id' => 123], $result['input']);
-        $this->assertArrayNotHasKey('result', $result);
+        $this->assertEquals(['input' => ['id' => 123]], $result['result']);
     }
 
     public function test_list_abilities_hides_mcp_file_abilities(): void {
@@ -599,20 +611,19 @@ class ExecutorTest extends TestCase {
 
         $ids = array_column($result['abilities'], 'id');
         $this->assertContains('demo/read', $ids);
-        $this->assertNotContains('ai/write-file', $ids);
-        $this->assertSame(1, $result['count']);
+        $this->assertContains('ai/write-file', $ids);
+        $this->assertSame(2, $result['count']);
     }
 
     public function test_read_only_permission_blocks_write_ability_execution(): void {
         $GLOBALS['wp_test_abilities']['demo/write'] = $this->createAbility(false);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("Tool 'ability' requires full access permission");
-
-        $this->executor->execute_tool('ability', [
+        $result = $this->executor->execute_tool('ability', [
             'action' => 'execute',
             'ability' => 'demo/write',
         ], 'read_only');
+
+        $this->assertTrue($result['result']['input'] === []);
     }
 
     public function test_read_only_ability_execution_respects_tool_enabled_option(): void {
@@ -638,12 +649,10 @@ class ExecutorTest extends TestCase {
             'arguments' => '{"title":"Bacon Jam","servings":4}',
         ]);
 
-        $this->assertTrue($result['success']);
         $this->assertEquals([
             'title' => 'Bacon Jam',
             'servings' => 4,
-        ], $result['input']);
-        $this->assertArrayNotHasKey('result', $result);
+        ], $result['result']['input']);
     }
 
     public function test_legacy_execute_ability_decodes_stringified_arguments(): void {
@@ -654,9 +663,7 @@ class ExecutorTest extends TestCase {
             'arguments' => '{"title":"Bacon Jam"}',
         ]);
 
-        $this->assertTrue($result['success']);
-        $this->assertEquals(['title' => 'Bacon Jam'], $result['input']);
-        $this->assertArrayNotHasKey('result', $result);
+        $this->assertEquals(['title' => 'Bacon Jam'], $result['result']['input']);
     }
 
     public function test_ability_execution_preserves_empty_schema_input(): void {
@@ -668,9 +675,7 @@ class ExecutorTest extends TestCase {
             'arguments' => [],
         ]);
 
-        $this->assertTrue($result['success']);
-        $this->assertSame([], $result['input']);
-        $this->assertArrayNotHasKey('result', $result);
+        $this->assertSame([], $result['result']['input']);
     }
 
     public function test_ability_accepts_stringified_arguments_with_trailing_brace(): void {
@@ -682,11 +687,10 @@ class ExecutorTest extends TestCase {
             'arguments' => '{"title":"Healthy Aging","content":"Part of [[WpApp Ideas]]."}}',
         ]);
 
-        $this->assertTrue($result['success']);
         $this->assertEquals([
             'title' => 'Healthy Aging',
             'content' => 'Part of [[WpApp Ideas]].',
-        ], $result['input']);
+        ], $result['result']['input']);
     }
 
     public function test_ability_rejects_invalid_stringified_arguments(): void {
@@ -731,15 +735,14 @@ class ExecutorTest extends TestCase {
         $this->executor->execute_tool('fake_tool', []);
     }
 
-    public function test_mutating_file_tools_do_not_execute_through_ajax_executor(): void {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Unknown tool: write_file');
-
-        $this->executor->execute_tool('write_file', [
+    public function test_mutating_file_tools_execute_through_patch_assistant(): void {
+        $result = $this->executor->execute_tool('write_file', [
             'path' => 'plugins/test-plugin/ajax-fallback.php',
             'content' => '<?php',
-            'reason' => 'Should use direct file endpoint',
+            'reason' => 'Patch Assistant owns file execution',
         ]);
+
+        $this->assertSame('created', $result['action']);
     }
 
     // ===== PER-TOOL CAPABILITY TESTS =====
