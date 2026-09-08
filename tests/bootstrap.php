@@ -27,7 +27,9 @@ foreach ([
     }
 }
 
-require_once dirname(__DIR__) . '/dev-tools.php';
+if (!class_exists('AI_Assistant_Dev_Tools')) {
+    require_once dirname(__DIR__) . '/dev-tools.php';
+}
 
 // Load Patch Assistant's third-party dependencies after its manually loaded
 // classes, avoiding duplicate declarations from Composer class discovery.
