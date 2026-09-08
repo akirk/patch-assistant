@@ -80,7 +80,8 @@ function patch_assistant_init(): void {
     new AI_Assistant\Plugin_Downloads($git_tracker_manager);
     new AI_Assistant\Changes_Admin($git_tracker_manager);
     new AI_Assistant\Plugin_Recovery_Admin();
-    new AI_Assistant\Plugin_Checkout_Badge($git_tracker_manager);
+    $plugin_checkout_badge = new AI_Assistant\Plugin_Checkout_Badge($git_tracker_manager);
+    new AI_Assistant\Chat_AI_Changes($plugin_checkout_badge);
     new AI_Assistant\Wp_App_Abilities($git_tracker_manager);
     new AI_Assistant\File_Abilities($git_tracker_manager);
     (new AI_Assistant\File_Access_Health())->register();
