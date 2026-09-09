@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Patch Assistant
  * Description: Development companion for AI Assistant with file editing, code execution, plugin installation, Git tracking, and WpApp tools.
- * Version: 1.0.0
+ * Version: 1.0.0+f2dcdc4a8411
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Requires Plugins: ai-assistant

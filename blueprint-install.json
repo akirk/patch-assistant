@@ -1,22 +1,22 @@
 {
-	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
-	"meta": {
-		"title": "Patch Assistant",
-		"description": "Install Patch Assistant into an existing WordPress Playground site."
-	},
-	"steps": [
-		{
-			"step": "installPlugin",
-			"pluginData": {
-				"resource": "git:directory",
-				"url": "https://github.com/akirk/patch-assistant",
-				"ref": "main",
-				"refType": "branch"
-			},
-			"options": {
-				"activate": true,
-				"targetFolderName": "patch-assistant"
-			}
-		}
-	]
+    "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+    "meta": {
+        "title": "Patch Assistant",
+        "description": "Install Patch Assistant into an existing WordPress Playground site."
+    },
+    "steps": [
+        {
+            "step": "installPlugin",
+            "pluginData": {
+                "resource": "git:directory",
+                "url": "https://github.com/akirk/patch-assistant",
+                "ref": "dist/main",
+                "refType": "branch"
+            },
+            "options": {
+                "activate": true,
+                "targetFolderName": "patch-assistant"
+            }
+        }
+    ]
 }
