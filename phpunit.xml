@@ -3,12 +3,24 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
     bootstrap="tests/bootstrap.php"
+    defaultTestSuite="patch-assistant"
     colors="true"
     failOnRisky="true"
     failOnWarning="true">
     <testsuites>
-        <testsuite name="patch-assistant-smoke">
-            <directory suffix="Test.php">tests/smoke</directory>
+        <testsuite name="patch-assistant">
+            <directory suffix="Test.php">tests</directory>
+            <exclude>tests/ExecutorTest.php</exclude>
+            <exclude>tests/SettingsTest.php</exclude>
+            <exclude>tests/ToolsTest.php</exclude>
+        </testsuite>
+        <!-- These legacy tests exercise AI Assistant dependency classes rather
+             than Patch Assistant's implementations. Keep explicit opt-in
+             discovery while its upstream fixture gaps are reconciled. -->
+        <testsuite name="ai-assistant-legacy">
+            <file>tests/ExecutorTest.php</file>
+            <file>tests/SettingsTest.php</file>
+            <file>tests/ToolsTest.php</file>
         </testsuite>
     </testsuites>
     <source>
