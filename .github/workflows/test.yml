@@ -8,12 +8,17 @@ on:
 jobs:
   php:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: patch-assistant
     strategy:
       fail-fast: false
       matrix:
         php: ['8.2', '8.3', '8.4']
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: patch-assistant
       - uses: actions/checkout@v4
         with:
           repository: akirk/ai-assistant
@@ -23,6 +28,7 @@ jobs:
           php-version: ${{ matrix.php }}
           tools: composer
           coverage: none
+          extensions: mbstring, zip
       - run: composer install --no-interaction --prefer-dist --no-progress
-      - run: composer install --working-dir=ai-assistant --no-interaction --prefer-dist --no-progress
-      - run: composer test
+      - run: composer install --working-dir=../ai-assistant --no-interaction --prefer-dist --no-progress
+      - run: composer test -- --fail-on-skipped
