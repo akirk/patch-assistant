@@ -523,7 +523,6 @@ class File_Tool_Executor {
                 if (isset($lint_result['line'])) {
                     $error_msg .= ' on line ' . $lint_result['line'];
                 }
-                file_put_contents($full_path, $content); // Temporary CI mutation.
                 throw new \Exception($error_msg);
             }
         }
