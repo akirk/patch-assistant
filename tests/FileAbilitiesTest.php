@@ -146,12 +146,16 @@ class FileAbilitiesTest extends TestCase {
         $this->assertFileDoesNotExist($this->plugin_dir . '/file-abilities-test.php');
     }
 
-    public function test_executor_failures_become_wp_error(): void {
+    public function test_path_traversal_failure_becomes_wp_error(): void {
         $abilities = new File_Abilities(null, new File_Tool_Executor(WP_CONTENT_DIR, null));
 
         $result = $abilities->execute('read_file', ['path' => '../wp-config.php']);
         $this->assertInstanceOf(\WP_Error::class, $result);
         $this->assertSame('ai_assistant_file_tool_failed', $result->get_error_code());
+    }
+
+    public function test_invalid_php_failure_does_not_create_a_file(): void {
+        $abilities = new File_Abilities(null, new File_Tool_Executor(WP_CONTENT_DIR, null));
 
         $result = $abilities->execute('write_file', [
             'path' => 'plugins/file-abilities-test/broken.php',
@@ -159,6 +163,9 @@ class FileAbilitiesTest extends TestCase {
             'reason' => 'broken',
         ]);
         $this->assertInstanceOf(\WP_Error::class, $result);
+        $this->assertSame('ai_assistant_file_tool_failed', $result->get_error_code());
+        $this->assertStringContainsString('PHP syntax error', $result->get_error_message());
+        $this->assertFileDoesNotExist($this->plugin_dir . '/broken.php');
     }
 
     private function removeDirectory(string $dir): void {
