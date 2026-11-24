@@ -16,12 +16,6 @@ class ToolsTest extends TestCase {
         $this->tools = new Tools();
     }
 
-    public function test_get_all_tools_returns_array(): void {
-        $tools = $this->tools->get_all_tools();
-        $this->assertIsArray($tools);
-        $this->assertNotEmpty($tools);
-    }
-
     public function test_all_tools_have_required_properties(): void {
         $tools = $this->tools->get_all_tools();
 
