@@ -831,31 +831,20 @@ class ExecutorTest extends TestCase {
         $this->assertFileExists($this->test_dir . '/plugins/test-plugin/valid.php');
     }
 
-    public function test_write_file_with_invalid_php_throws_exception(): void {
+    public function test_write_file_rejects_invalid_php_without_creating_file(): void {
+        $file_path = $this->test_dir . '/plugins/test-plugin/invalid.php';
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('PHP syntax error');
 
-        $this->executor->execute_file_tool('write_file', [
-            'path' => 'plugins/test-plugin/invalid.php',
-            'content' => '<?php function hello( { return "world"; }',
-            'reason' => 'Test invalid PHP',
-        ]);
-    }
-
-    public function test_write_file_with_invalid_php_does_not_create_file(): void {
-        $file_path = $this->test_dir . '/plugins/test-plugin/invalid-not-created.php';
-
         try {
             $this->executor->execute_file_tool('write_file', [
-                'path' => 'plugins/test-plugin/invalid-not-created.php',
-                'content' => '<?php class Broken {',
-                'reason' => 'Test invalid PHP not created',
+                'path' => 'plugins/test-plugin/invalid.php',
+                'content' => '<?php function hello( { return "world"; }',
+                'reason' => 'Test invalid PHP',
             ]);
-        } catch (\Exception $e) {
-            // Expected
+        } finally {
+            $this->assertFileDoesNotExist($file_path);
         }
-
-        $this->assertFileDoesNotExist($file_path);
     }
 
     public function test_write_file_with_non_php_file_skips_lint(): void {
@@ -889,29 +878,13 @@ class ExecutorTest extends TestCase {
         $this->assertStringContainsString('new_name', $content);
     }
 
-    public function test_edit_file_with_invalid_php_result_throws_exception(): void {
-        // Create a valid PHP file first
-        file_put_contents(
-            $this->test_dir . '/plugins/test-plugin/to-break.php',
-            '<?php function valid() { return true; }'
-        );
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('PHP syntax error');
-
-        $this->executor->execute_file_tool('edit_file', [
-            'path' => 'plugins/test-plugin/to-break.php',
-            'edits' => [
-                ['search' => '{ return true; }', 'replace' => '{ return true;'],
-            ],
-            'reason' => 'Test breaking edit',
-        ]);
-    }
-
-    public function test_edit_file_with_invalid_php_result_preserves_original(): void {
+    public function test_edit_file_rejects_invalid_php_without_changing_original(): void {
         $file_path = $this->test_dir . '/plugins/test-plugin/to-preserve.php';
         $original_content = '<?php function valid() { return true; }';
         file_put_contents($file_path, $original_content);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('PHP syntax error');
 
         try {
             $this->executor->execute_file_tool('edit_file', [
@@ -921,11 +894,9 @@ class ExecutorTest extends TestCase {
                 ],
                 'reason' => 'Test preserving original',
             ]);
-        } catch (\Exception $e) {
-            // Expected
+        } finally {
+            $this->assertSame($original_content, file_get_contents($file_path));
         }
-
-        $this->assertEquals($original_content, file_get_contents($file_path));
     }
 
     public function test_edit_file_on_non_php_file_skips_lint(): void {

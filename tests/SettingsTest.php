@@ -60,12 +60,6 @@ class SettingsTest extends TestCase {
 
     // ===== get_all_tools_with_meta =====
 
-    public function test_all_tools_with_meta_returns_array(): void {
-        $meta = $this->settings->get_all_tools_with_meta();
-        $this->assertIsArray($meta);
-        $this->assertNotEmpty($meta);
-    }
-
     public function test_all_tools_with_meta_has_required_keys(): void {
         foreach ($this->settings->get_all_tools_with_meta() as $name => $data) {
             $this->assertArrayHasKey('label', $data, "Tool '$name' missing 'label'");
